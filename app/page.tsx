@@ -81,23 +81,39 @@ export default function LinkSwipeApp() {
     setIndex((i) => i + 1);
   };
   
-  // Düzeltme: `e.nativeEvent instanceof TouchEvent` kontrolü eklendi.
-  const onPointerDown = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+  // Düzeltme: Olay işleyicilerini ayrı ayrı tanımladık
+  const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     dragging.current = true;
-    startX.current = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    startX.current = e.clientX;
     currentX.current = startX.current;
   };
 
-  // Düzeltme: `e.nativeEvent instanceof TouchEvent` kontrolü eklendi.
-  const onPointerMove = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!dragging.current || !cardRef.current) return;
-    const x = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const x = e.clientX;
     currentX.current = x;
     const dx = x - startX.current;
     const rot = Math.max(-15, Math.min(15, dx / 12));
     cardRef.current.style.transform = `translateX(${dx}px) rotate(${rot}deg)`;
     cardRef.current.style.opacity = `${Math.max(0.6, 1 - Math.abs(dx) / 600)}`;
   };
+  
+  const onTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    dragging.current = true;
+    startX.current = e.touches[0].clientX;
+    currentX.current = startX.current;
+  };
+
+  const onTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!dragging.current || !cardRef.current) return;
+    const x = e.touches[0].clientX;
+    currentX.current = x;
+    const dx = x - startX.current;
+    const rot = Math.max(-15, Math.min(15, dx / 12));
+    cardRef.current.style.transform = `translateX(${dx}px) rotate(${rot}deg)`;
+    cardRef.current.style.opacity = `${Math.max(0.6, 1 - Math.abs(dx) / 600)}`;
+  };
+
 
   const onPointerUp = () => {
     if (!dragging.current || !cardRef.current) return;
@@ -159,12 +175,12 @@ export default function LinkSwipeApp() {
                 <article
                   ref={cardRef}
                   className="absolute inset-0 rounded-3xl overflow-hidden shadow-2xl border border-white/10 bg-black/30 backdrop-blur-xl"
-                  onMouseDown={onPointerDown}
-                  onMouseMove={onPointerMove}
+                  onMouseDown={onMouseDown}
+                  onMouseMove={onMouseMove}
                   onMouseUp={onPointerUp}
                   onMouseLeave={() => dragging.current && onPointerUp()}
-                  onTouchStart={onPointerDown}
-                  onTouchMove={onPointerMove}
+                  onTouchStart={onTouchStart}
+                  onTouchMove={onTouchMove}
                   onTouchEnd={onPointerUp}
                 >
                   <div className="block w-full h-full group">
