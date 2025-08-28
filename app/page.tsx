@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useRef, useState } from "react";
-import Image from 'next/image'; // Make sure this import is here
+import Image from 'next/image';
 
 /**
  * LinkSwipe — MVP (Frontend-only)
@@ -113,7 +113,7 @@ export default function LinkSwipeApp() {
     }
     if (dx < -threshold) {
       // swipe left
-      cardRef.current.style.style.transition = "transform 220ms ease, opacity 220ms ease";
+      cardRef.current.style.transition = "transform 220ms ease, opacity 220ms ease";
       cardRef.current.style.transform = "translateX(-500px) rotate(-20deg)";
       cardRef.current.style.opacity = "0";
       setTimeout(() => handleSwipeDecision("left"), 200);
@@ -148,7 +148,7 @@ export default function LinkSwipeApp() {
               {!current && (
                 <div className="absolute inset-0 flex items-center justify-center rounded-3xl border border-white/20 bg-white/10 p-10 text-center">
                   <div>
-                    <p className="text-lg font-semibold">You've seen all profiles ✨</p>
+                    <p className="text-lg font-semibold">You&apos;ve seen all profiles ✨</p>
                     <p className="text-white/80 text-sm mt-2">Check back later for new profiles.</p>
                   </div>
                 </div>
