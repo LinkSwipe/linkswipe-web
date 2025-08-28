@@ -81,17 +81,17 @@ export default function LinkSwipeApp() {
     setIndex((i) => i + 1);
   };
   
-  // Düzeltme: onMouseDown ve onTouchStart olayları için tek fonksiyon tanımı.
+  // Düzeltme: `e.nativeEvent instanceof TouchEvent` kontrolü eklendi.
   const onPointerDown = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
     dragging.current = true;
-    startX.current = e.nativeEvent instanceof TouchEvent ? e.nativeEvent.touches[0].clientX : e.clientX;
+    startX.current = 'touches' in e ? e.touches[0].clientX : e.clientX;
     currentX.current = startX.current;
   };
 
-  // Düzeltme: onMouseMove ve onTouchMove olayları için tek fonksiyon tanımı.
+  // Düzeltme: `e.nativeEvent instanceof TouchEvent` kontrolü eklendi.
   const onPointerMove = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
     if (!dragging.current || !cardRef.current) return;
-    const x = e.nativeEvent instanceof TouchEvent ? e.nativeEvent.touches[0].clientX : e.clientX;
+    const x = 'touches' in e ? e.touches[0].clientX : e.clientX;
     currentX.current = x;
     const dx = x - startX.current;
     const rot = Math.max(-15, Math.min(15, dx / 12));
