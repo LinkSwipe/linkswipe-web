@@ -57,7 +57,8 @@ export default function LinkSwipeApp() {
   const current = APPROVED_PROFILES[index] ?? null;
 
   // Swipe gesture refs
-  const cardRef = useRef(null);
+  // BURADAKİ DEĞİŞİKLİK: useRef'e HTMLDivElement tipi eklendi.
+  const cardRef = useRef<HTMLDivElement>(null);
   const startX = useRef(0);
   const currentX = useRef(0);
   const dragging = useRef(false);
