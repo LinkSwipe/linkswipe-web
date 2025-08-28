@@ -74,7 +74,8 @@ export default function LinkSwipeApp() {
     }
   };
 
-  const handleSwipeDecision = (dir) => {
+  // BURADAKİ DEĞİŞİKLİK: 'dir' parametresine tip ataması yapıldı.
+  const handleSwipeDecision = (dir: "left" | "right") => {
     // dir: "left" | "right"
     if (!current) return;
     if (dir === "right") {
@@ -83,15 +84,15 @@ export default function LinkSwipeApp() {
     setIndex((i) => i + 1);
   };
 
-  const onPointerDown = (e) => {
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
     dragging.current = true;
-    startX.current = e.type.startsWith("touch") ? e.touches[0].clientX : e.clientX;
+    startX.current = e.type.startsWith("touch") ? (e as React.TouchEvent<HTMLDivElement>).touches[0].clientX : (e as React.PointerEvent<HTMLDivElement>).clientX;
     currentX.current = startX.current;
   };
 
-  const onPointerMove = (e) => {
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
     if (!dragging.current || !cardRef.current) return;
-    const x = e.type.startsWith("touch") ? e.touches[0].clientX : e.clientX;
+    const x = e.type.startsWith("touch") ? (e as React.TouchEvent<HTMLDivElement>).touches[0].clientX : (e as React.PointerEvent<HTMLDivElement>).clientX;
     currentX.current = x;
     const dx = x - startX.current;
     const rot = Math.max(-15, Math.min(15, dx / 12));
@@ -123,8 +124,9 @@ export default function LinkSwipeApp() {
     resetTransform();
   };
 
+
   // Toast helper
-  const pushToast = (msg) => {
+  const pushToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(""), 2600);
   };
@@ -267,11 +269,11 @@ export default function LinkSwipeApp() {
   );
 }
 
-function SubmitProfileCard({ onToast, onOpenLegal }) {
+function SubmitProfileCard({ onToast, onOpenLegal }: { onToast: (msg: string) => void; onOpenLegal: () => void }) {
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [link, setLink] = useState("");
-  const [file, setFile] = useState(null);
+  const [file, setFile] = useState<File | null>(null);
   const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -286,7 +288,7 @@ function SubmitProfileCard({ onToast, onOpenLegal }) {
     return null;
   };
 
-  const onSubmit = async (e) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const err = validate();
     if (err) {
@@ -296,7 +298,7 @@ function SubmitProfileCard({ onToast, onOpenLegal }) {
     setSubmitting(true);
 
     // Submitting form information (This is just a frontend placeholder)
-    console.log("Submitting form data:", { name, username, link, file: file.name });
+    console.log("Submitting form data:", { name, username, link, file: file?.name });
     
     // Open payment link (Gumroad link)
     window.open("https://gumroad.com/l/GUMROAD_PRODUCT_LINK", "_blank", "noopener,noreferrer");
@@ -410,7 +412,7 @@ function SubmitProfileCard({ onToast, onOpenLegal }) {
   );
 }
 
-function Modal({ title, children, onClose }) {
+function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
