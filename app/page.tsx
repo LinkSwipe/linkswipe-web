@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useRef, useState } from "react";
+import Image from 'next/image'; // Make sure this import is here
 
 /**
  * LinkSwipe — MVP (Frontend-only)
@@ -112,7 +113,7 @@ export default function LinkSwipeApp() {
     }
     if (dx < -threshold) {
       // swipe left
-      cardRef.current.style.transition = "transform 220ms ease, opacity 220ms ease";
+      cardRef.current.style.style.transition = "transform 220ms ease, opacity 220ms ease";
       cardRef.current.style.transform = "translateX(-500px) rotate(-20deg)";
       cardRef.current.style.opacity = "0";
       setTimeout(() => handleSwipeDecision("left"), 200);
@@ -131,7 +132,7 @@ export default function LinkSwipeApp() {
     <div className="min-h-screen w-full bg-gradient-to-br from-fuchsia-500 via-sky-500 to-emerald-400 text-white">
       <header className="mx-auto max-w-5xl px-4 py-6 flex items-center justify-between">
         <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight drop-shadow-sm">
-          Bağlantı Kaydırma
+          Link Swipe
         </h1>
       </header>
 
@@ -139,16 +140,16 @@ export default function LinkSwipeApp() {
         <section className="grid place-items-center gap-8">
           <div className="w-full max-w-md">
             <div className="mb-4 text-center">
-              <h2 className="text-xl font-bold">Sosyal profilleri keşfedin</h2>
-              <p className="text-white/90 text-sm">Geçmek için sola, kalmak için sağa kaydırın.</p>
+              <h2 className="text-xl font-bold">Discover social profiles</h2>
+              <p className="text-white/90 text-sm">Swipe left to pass, right to like.</p>
             </div>
 
             <div className="relative h-[520px] select-none mx-auto">
               {!current && (
                 <div className="absolute inset-0 flex items-center justify-center rounded-3xl border border-white/20 bg-white/10 p-10 text-center">
                   <div>
-                    <p className="text-lg font-semibold">Tüm profilleri gördünüz ✨</p>
-                    <p className="text-white/80 text-sm mt-2">Yeni profiller için daha sonra tekrar kontrol edin.</p>
+                    <p className="text-lg font-semibold">You've seen all profiles ✨</p>
+                    <p className="text-white/80 text-sm mt-2">Check back later for new profiles.</p>
                   </div>
                 </div>
               )}
@@ -166,16 +167,19 @@ export default function LinkSwipeApp() {
                   onTouchEnd={onPointerUp}
                 >
                   <div className="block w-full h-full group">
-                    <img
+                    {/* HERE IS THE CHANGE: Using Next.js Image component */}
+                    <Image
                       src={current.photoUrl}
                       alt={current.name}
+                      width={1200} // Set a default width, adjust as needed
+                      height={900} // Set a default height, adjust as needed (e.g., 4/5 of 520px)
                       className="h-4/5 w-full object-cover transition group-hover:opacity-95"
                       draggable={false}
                     />
                     <div className="h-1/5 w-full flex items-center justify-between px-5 bg-gradient-to-t from-black/60 to-transparent -mt-16 pt-16">
                       <div>
                         <h3 className="text-2xl font-extrabold drop-shadow-sm">{current.name}</h3>
-                        <p className="text-white/85 text-sm">Profili açmak için tıklayın</p>
+                        <p className="text-white/85 text-sm">Click to open profile</p>
                       </div>
                       <div className="flex gap-3">
                         <button
@@ -184,8 +188,8 @@ export default function LinkSwipeApp() {
                             handleSwipeDecision("left");
                           }}
                           className="h-12 w-12 rounded-full bg-red-500/90 hover:bg-red-500 transition shadow-lg flex items-center justify-center"
-                          aria-label="Geç"
-                          title="Geç"
+                          aria-label="Pass"
+                          title="Pass"
                         >
                           ✖
                         </button>
@@ -195,8 +199,8 @@ export default function LinkSwipeApp() {
                             handleSwipeDecision("right");
                           }}
                           className="h-12 w-12 rounded-full bg-emerald-500/90 hover:bg-emerald-500 transition shadow-lg flex items-center justify-center"
-                          aria-label="Profili Aç"
-                          title="Profili Aç"
+                          aria-label="Open Profile"
+                          title="Open Profile"
                         >
                           ✓
                         </button>
@@ -212,7 +216,7 @@ export default function LinkSwipeApp() {
                     onClick={() => setShowSubmit(true)}
                     className="rounded-2xl bg-white/10 px-6 py-3 text-lg font-semibold backdrop-blur hover:bg-white/20 transition shadow-lg"
                 >
-                    Profilinizi Tanıtın (10$)
+                    Promote your Profile ($10)
                 </button>
             </div>
           </div>
@@ -225,7 +229,7 @@ export default function LinkSwipeApp() {
                 onClick={() => setShowSubmit(true)}
                 className="rounded-2xl bg-white/10 px-4 py-2 text-sm font-semibold backdrop-blur hover:bg-white/20 transition"
             >
-                Profilinizi Tanıtın (10$)
+                Promote your Profile ($10)
             </button>
             <a
                 href="#"
@@ -235,20 +239,20 @@ export default function LinkSwipeApp() {
                 }}
                 className="text-white/90 hover:text-white underline decoration-white/40 decoration-2 underline-offset-4"
             >
-                Yasal
+                Legal
             </a>
         </div>
-        <p>© {new Date().getFullYear()} Bağlantı Kaydırma. Tüm hakları saklıdır.</p>
+        <p>© {new Date().getFullYear()} Link Swipe. All rights reserved.</p>
       </footer>
 
       {showSubmit && (
-        <Modal onClose={() => setShowSubmit(false)} title="Profilinizi Tanıtın (10$)">
+        <Modal onClose={() => setShowSubmit(false)} title="Promote Your Profile ($10)">
           <SubmitProfileCard onToast={pushToast} onOpenLegal={() => setShowLegal(true)} />
         </Modal>
       )}
 
       {showLegal && (
-        <Modal onClose={() => setShowLegal(false)} title="Yasal – Hizmet Şartları ve Gizlilik Politikası">
+        <Modal onClose={() => setShowLegal(false)} title="Legal – Terms of Service and Privacy Policy">
           <LegalDocs />
         </Modal>
       )}
@@ -273,11 +277,11 @@ function SubmitProfileCard({ onToast, onOpenLegal }) {
   const filePreview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
 
   const validate = () => {
-    if (!name.trim()) return "Adınız gerekli";
-    if (!username.trim()) return "Kullanıcı adınız gerekli";
-    if (!/^https?:\/\//i.test(link)) return "Link http:// veya https:// ile başlamalıdır";
-    if (!file) return "Profil resmi dosyası gerekli";
-    if (!agreed) return "Yasal şartları kabul etmelisiniz";
+    if (!name.trim()) return "Your Name is required";
+    if (!username.trim()) return "Your Username is required";
+    if (!/^https?:\/\//i.test(link)) return "Link must start with http:// or https://";
+    if (!file) return "Profile image file is required";
+    if (!agreed) return "You must accept the legal terms";
     return null;
   };
 
@@ -290,20 +294,20 @@ function SubmitProfileCard({ onToast, onOpenLegal }) {
     }
     setSubmitting(true);
 
-    // Form bilgilerini gönderme (Bu sadece bir ön yüz yer tutucusudur)
-    console.log("Form verileri gönderiliyor:", { name, username, link, file: file.name });
+    // Submitting form information (This is just a frontend placeholder)
+    console.log("Submitting form data:", { name, username, link, file: file.name });
     
-    // Ödeme bağlantısını açma (Gumroad linki)
-    window.open("https://gumroad.com/l/GUMROAD_ÜRÜN_LİNKİ", "_blank", "noopener,noreferrer");
+    // Open payment link (Gumroad link)
+    window.open("https://gumroad.com/l/GUMROAD_PRODUCT_LINK", "_blank", "noopener,noreferrer");
 
-    // Kullanıcıya bilgi verme
+    // Inform user
     onToast(
-      "Ödeme sayfasına yönlendiriliyorsunuz. Lütfen ödemeyi tamamlayın. Ödeme sonrasında profiliniz incelenmek üzere bize ulaşacaktır."
+      "You are being redirected to the payment page. Please complete the payment. After payment, your profile will be submitted for review."
     );
 
     setSubmitting(false);
 
-    // Formu temizle
+    // Clear form
     setName("");
     setUsername("");
     setLink("");
@@ -315,20 +319,20 @@ function SubmitProfileCard({ onToast, onOpenLegal }) {
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm mb-1">Adınız</label>
+          <label className="block text-sm mb-1">Your Name</label>
           <input
             className="w-full rounded-xl border border-white/20 bg-white/10 px-3 py-2 outline-none placeholder-white/70"
-            placeholder="Ayşe Yılmaz"
+            placeholder="Jane Doe"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
           />
         </div>
         <div>
-          <label className="block text-sm mb-1">Kullanıcı Adınız</label>
+          <label className="block text-sm mb-1">Your Username</label>
           <input
             className="w-full rounded-xl border border-white/20 bg-white/10 px-3 py-2 outline-none placeholder-white/70"
-            placeholder="@ayseyilmaz"
+            placeholder="@janedoe"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
@@ -337,10 +341,10 @@ function SubmitProfileCard({ onToast, onOpenLegal }) {
       </div>
 
       <div>
-        <label className="block text-sm mb-1">Tek Sosyal Medya Linki</label>
+        <label className="block text-sm mb-1">Single Social Media Link</label>
         <input
           className="w-full rounded-xl border border-white/20 bg-white/10 px-3 py-2 outline-none placeholder-white/70"
-          placeholder="https://instagram.com/kullaniciadiniz"
+          placeholder="https://instagram.com/yourusername"
           value={link}
           onChange={(e) => setLink(e.target.value)}
           required
@@ -349,7 +353,7 @@ function SubmitProfileCard({ onToast, onOpenLegal }) {
       </div>
 
       <div>
-        <label className="block text-sm mb-1">Profil Fotoğrafı (dosya)</label>
+        <label className="block text-sm mb-1">Profile Photo (file)</label>
         <input
           type="file"
           accept="image/*"
@@ -359,9 +363,12 @@ function SubmitProfileCard({ onToast, onOpenLegal }) {
         />
         {filePreview && (
           <div className="mt-3">
-            <img
+            {/* HERE IS THE CHANGE: Using Next.js Image component for file preview */}
+            <Image
               src={filePreview}
-              alt="Önizleme"
+              alt="Preview"
+              width={160} // Set a fixed width for preview
+              height={160} // Set a fixed height for preview
               className="h-40 w-40 object-cover rounded-2xl border border-white/20"
             />
           </div>
@@ -377,14 +384,15 @@ function SubmitProfileCard({ onToast, onOpenLegal }) {
         />
         <span>
           {" "}
+          I have read and agree to the{" "}
           <button
             type="button"
             onClick={onOpenLegal}
             className="underline decoration-white/40 decoration-2 underline-offset-4"
           >
-            Hizmet Şartları ve Gizlilik Politikası'nı
+            Terms of Service and Privacy Policy
           </button>
-          {" "}okudum ve kabul ediyorum. Profilimin bir yönetici tarafından onaylanana ve ödeme onaylanana kadar yayınlanmayacağını anlıyorum.
+          . I understand that my profile will not be published until approved by an administrator and payment is confirmed.
         </span>
       </label>
 
@@ -394,7 +402,7 @@ function SubmitProfileCard({ onToast, onOpenLegal }) {
           disabled={submitting}
           className="rounded-2xl bg-emerald-400 px-6 py-3 font-bold text-black hover:bg-emerald-300 shadow disabled:opacity-60"
         >
-          {submitting ? "Gönderiliyor..." : "Tanıtım İçin 10$ Öde"}
+          {submitting ? "Submitting..." : "Pay $10 to Promote"}
         </button>
       </div>
     </form>
@@ -415,7 +423,7 @@ function Modal({ title, children, onClose }) {
           <button
             onClick={onClose}
             className="rounded-full bg-white/20 hover:bg-white/30 p-2"
-            aria-label="Kapat"
+            aria-label="Close"
           >
             ✖
           </button>
@@ -432,59 +440,57 @@ function LegalDocs() {
   return (
     <div className="space-y-6 text-white/95 text-sm leading-relaxed">
       <section>
-        <h4 className="font-bold text-white text-base">Hizmet Şartları</h4>
+        <h4 className="font-bold text-white text-base">Terms of Service</h4>
         <p>
-          LinkSwipe, herkese açık sosyal medya bağlantıları için bir keşif aracıdır. İçerik
-          göndererek, yayınlama haklarına sahip olduğunuzu, içeriğin doğru, yasal olduğunu ve
-          üçüncü taraf haklarını ihlal etmediğini onaylamış olursunuz. Herhangi bir profili
-          kendi takdirimize bağlı olarak reddedebilir, kaldırabilir veya denetleyebiliriz.
-          Yayınlama, manuel incelemeye ve başarılı ödemeye tabidir.
+          LinkSwipe is a discovery tool for public social media links. By submitting content, you
+          confirm that you own the rights to publish, that the content is accurate, legal, and does not
+          infringe on third-party rights. We reserve the right to reject, remove, or moderate any profile
+          at our discretion. Publication is subject to manual review and successful payment.
         </p>
         <ul className="list-disc ml-5 mt-2 space-y-1">
-          <li>Profilinizde özel veya hassas veriler bulunmamalıdır.</li>
-          <li>Taklit, spam veya yasa dışı içerik olmamalıdır.</li>
-          <li>Profiller tanıtım amaçlıdır; görünürlük veya sonuç garantisi verilmez.</li>
-          <li>Ödemeler PCI uyumlu bir sağlayıcı tarafından işlenir; kart verilerini saklamayız.</li>
-          <li>Şartları ihlal eden içerik gönderdiğinizde, yapılan ödemeler iade edilmez.</li> {/* Yeni madde eklendi */}
+          <li>Your profile must not contain private or sensitive data.</li>
+          <li>No impersonation, spam, or illegal content.</li>
+          <li>Profiles are for promotional purposes; no guarantee of visibility or results.</li>
+          <li>Payments are processed by a PCI-compliant provider; we do not store card data.</li>
+          <li>Payments are non-refundable if you submit content violating the terms.</li>
         </ul>
       </section>
 
       <section>
-        <h4 className="font-bold text-white text-base">Gizlilik Politikası</h4>
+        <h4 className="font-bold text-white text-base">Privacy Policy</h4>
         <p>
-          Hizmeti çalıştırmak için yalnızca gerekli verileri (ad, kullanıcı adı, herkese açık link,
-          profil resmi) toplarız. Özel bilgileri eklemeyin. Gelecekte bir üçüncü taraf
-          sağlayıcı ile oturum açarsanız, benzersiz kullanıcı kimliğiniz herkese açık olarak
-          görüntülenmeyecektir.
+          We only collect necessary data (name, username, public link, profile picture) to operate the
+          service. Do not include private information. If you sign in with a third-party
+          provider in the future, your unique user ID will not be publicly displayed.
         </p>
         <p className="mt-2">
-          Gönderilen veriler, sıkı erişim kontrollerine sahip güvenli bulut altyapısında
-          saklanabilir. Destek ile iletişime geçerek profilinizin silinmesini talep edebilirsiniz.
+          Submitted data may be stored on secure cloud infrastructure with strict access controls.
+          You may request deletion of your profile by contacting support.
         </p>
       </section>
 
       <section>
-        <h4 className="font-bold text-white text-base">Güvenlik</h4>
+        <h4 className="font-bold text-white text-base">Security</h4>
         <ul className="list-disc ml-5 mt-2 space-y-1">
-          <li>Gizli anahtarları (API anahtarları, veritabanı şifreleri) istemci koduna asla dahil etmeyin.</li>
-          <li>Tüm hassas işlemler (ödemeler, onaylar) sunucu tarafında yapılmalıdır.</li>
-          <li>Tüm girdileri sunucuda temizleyin ve doğrulayın. İçerik Güvenlik Politikası (CSP) kullanın.</li>
-          <li>Her yerde HTTPS kullanın ve oturumlar için HTTP-only, Güvenli çerezleri etkinleştirin.</li>
+          <li>Never include sensitive keys (API keys, database passwords) in client-side code.</li>
+          <li>All sensitive operations (payments, approvals) must be handled server-side.</li>
+          <li>Sanitize and validate all inputs on the server. Use Content Security Policy (CSP).</li>
+          <li>Use HTTPS everywhere and enable HTTP-only, Secure cookies for sessions.</li>
         </ul>
       </section>
 
       <section>
-        <h4 className="font-bold text-white text-base">İadeler</h4>
+        <h4 className="font-bold text-white text-base">Refunds</h4>
         <p>
-          Yasaların gerektirmediği sürece, profiliniz incelendikten sonra ödemeler iade edilmez.
-          Eğer içeriğiniz Hizmet Şartlarını ihlal ediyorsa, ödemeniz iade edilmeden profiliniz reddedilebilir.
+          Payments are non-refundable once your profile has been reviewed, unless required by law.
+          If your content violates the Terms of Service, your profile may be rejected without a refund.
         </p>
       </section>
 
       <section>
-        <h4 className="font-bold text-white text-base">İletişim</h4>
+        <h4 className="font-bold text-white text-base">Contact</h4>
         <p>
-          Her türlü soru veya kaldırma talebi için: support@linkswipe.example adresine ulaşın.
+          For any questions or removal requests: reach out to support@linkswipe.example.
         </p>
       </section>
     </div>
