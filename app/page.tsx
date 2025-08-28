@@ -57,7 +57,6 @@ export default function LinkSwipeApp() {
   const current = APPROVED_PROFILES[index] ?? null;
 
   // Swipe gesture refs
-  // BURADAKİ DEĞİŞİKLİK: useRef'e HTMLDivElement tipi eklendi.
   const cardRef = useRef<HTMLDivElement>(null);
   const startX = useRef(0);
   const currentX = useRef(0);
@@ -74,25 +73,25 @@ export default function LinkSwipeApp() {
     }
   };
 
-  // BURADAKİ DEĞİŞİKLİK: 'dir' parametresine tip ataması yapıldı.
   const handleSwipeDecision = (dir: "left" | "right") => {
-    // dir: "left" | "right"
     if (!current) return;
     if (dir === "right") {
       window.open(current.link, "_blank", "noopener,noreferrer");
     }
     setIndex((i) => i + 1);
   };
-
-  const onPointerDown = (e: React.PointerEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+  
+  // Düzeltme: onMouseDown ve onTouchStart olayları için tek fonksiyon tanımı.
+  const onPointerDown = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
     dragging.current = true;
-    startX.current = e.type.startsWith("touch") ? (e as React.TouchEvent<HTMLDivElement>).touches[0].clientX : (e as React.PointerEvent<HTMLDivElement>).clientX;
+    startX.current = e.nativeEvent instanceof TouchEvent ? e.nativeEvent.touches[0].clientX : e.clientX;
     currentX.current = startX.current;
   };
 
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+  // Düzeltme: onMouseMove ve onTouchMove olayları için tek fonksiyon tanımı.
+  const onPointerMove = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
     if (!dragging.current || !cardRef.current) return;
-    const x = e.type.startsWith("touch") ? (e as React.TouchEvent<HTMLDivElement>).touches[0].clientX : (e as React.PointerEvent<HTMLDivElement>).clientX;
+    const x = e.nativeEvent instanceof TouchEvent ? e.nativeEvent.touches[0].clientX : e.clientX;
     currentX.current = x;
     const dx = x - startX.current;
     const rot = Math.max(-15, Math.min(15, dx / 12));
@@ -123,7 +122,6 @@ export default function LinkSwipeApp() {
     }
     resetTransform();
   };
-
 
   // Toast helper
   const pushToast = (msg: string) => {
@@ -170,12 +168,11 @@ export default function LinkSwipeApp() {
                   onTouchEnd={onPointerUp}
                 >
                   <div className="block w-full h-full group">
-                    {/* HERE IS THE CHANGE: Using Next.js Image component */}
                     <Image
                       src={current.photoUrl}
                       alt={current.name}
-                      width={1200} // Set a default width, adjust as needed
-                      height={900} // Set a default height, adjust as needed (e.g., 4/5 of 520px)
+                      width={1200}
+                      height={900}
                       className="h-4/5 w-full object-cover transition group-hover:opacity-95"
                       draggable={false}
                     />
@@ -216,10 +213,10 @@ export default function LinkSwipeApp() {
             
             <div className="mt-8 text-center">
                 <button
-                    onClick={() => setShowSubmit(true)}
-                    className="rounded-2xl bg-white/10 px-6 py-3 text-lg font-semibold backdrop-blur hover:bg-white/20 transition shadow-lg"
+                  onClick={() => setShowSubmit(true)}
+                  className="rounded-2xl bg-white/10 px-6 py-3 text-lg font-semibold backdrop-blur hover:bg-white/20 transition shadow-lg"
                 >
-                    Promote your Profile ($10)
+                  Promote your Profile ($10)
                 </button>
             </div>
           </div>
@@ -366,12 +363,11 @@ function SubmitProfileCard({ onToast, onOpenLegal }: { onToast: (msg: string) =>
         />
         {filePreview && (
           <div className="mt-3">
-            {/* HERE IS THE CHANGE: Using Next.js Image component for file preview */}
             <Image
               src={filePreview}
               alt="Preview"
-              width={160} // Set a fixed width for preview
-              height={160} // Set a fixed height for preview
+              width={160}
+              height={160}
               className="h-40 w-40 object-cover rounded-2xl border border-white/20"
             />
           </div>
