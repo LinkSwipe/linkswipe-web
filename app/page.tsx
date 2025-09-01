@@ -23,6 +23,8 @@ import Image from 'next/image';
 // Admin: manually manage public, approved & paid profiles here
 // (These appear in the swipe deck). Replace with your real data.
 // You can also host a public JSON file and fetch it at runtime.
+//
+// UPDATED: Added a 'platform' property for each profile
 // ------------------------------------------------------------
 const APPROVED_PROFILES = [
   {
@@ -30,23 +32,50 @@ const APPROVED_PROFILES = [
     name: "Maya Collins",
     photoUrl:
       "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=1200&q=80&auto=format&fit=crop",
-    link: "https://instagram.com/"
+    link: "https://instagram.com/mayacollins",
+    platform: "instagram"
   },
   {
     id: "p2",
     name: "Leo Martinez",
     photoUrl:
       "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?w=1200&q=80&auto=format&fit=crop",
-    link: "https://tiktok.com/"
+    link: "https://x.com/leomartinez",
+    platform: "twitter" // We'll use 'twitter' for X.com
   },
   {
     id: "p3",
     name: "Aiko Tanaka",
     photoUrl:
       "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=1200&q=80&auto=format&fit=crop",
-    link: "https://youtube.com/"
+    link: "https://facebook.com/aikotanaka",
+    platform: "facebook"
+  },
+  {
+    id: "p4",
+    name: "Chen Wei",
+    photoUrl:
+      "https://images.unsplash.com/photo-1560272023-e17540248a31?w=1200&q=80&auto=format&fit=crop",
+    link: "https://tiktok.com/@chenwei",
+    platform: "tiktok"
   }
 ];
+
+// New function: returns logo path based on platform name
+const getPlatformLogo = (platform: string) => {
+  switch (platform) {
+    case 'instagram':
+      return '/instagram.svg';
+    case 'twitter': // X.com
+      return '/twitter.svg';
+    case 'facebook':
+      return '/facebook.svg';
+    case 'tiktok':
+      return '/tiktok.svg';
+    default:
+      return '/globe.svg'; // Fallback logo
+  }
+};
 
 export default function LinkSwipeApp() {
   const [index, setIndex] = useState(0);
@@ -80,8 +109,8 @@ export default function LinkSwipeApp() {
     }
     setIndex((i) => i + 1);
   };
-  
-  // Düzeltme: Olay işleyicilerini ayrı ayrı tanımladık
+    
+  // Handle mouse events
   const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     dragging.current = true;
     startX.current = e.clientX;
@@ -97,7 +126,8 @@ export default function LinkSwipeApp() {
     cardRef.current.style.transform = `translateX(${dx}px) rotate(${rot}deg)`;
     cardRef.current.style.opacity = `${Math.max(0.6, 1 - Math.abs(dx) / 600)}`;
   };
-  
+    
+  // Handle touch events
   const onTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     dragging.current = true;
     startX.current = e.touches[0].clientX;
@@ -113,7 +143,6 @@ export default function LinkSwipeApp() {
     cardRef.current.style.transform = `translateX(${dx}px) rotate(${rot}deg)`;
     cardRef.current.style.opacity = `${Math.max(0.6, 1 - Math.abs(dx) / 600)}`;
   };
-
 
   const onPointerUp = () => {
     if (!dragging.current || !cardRef.current) return;
@@ -223,6 +252,14 @@ export default function LinkSwipeApp() {
                       </div>
                     </div>
                   </div>
+                  {/* Yeni eklenen: Sosyal medya logosu */}
+                  <Image
+                    src={getPlatformLogo(current.platform)}
+                    alt={`${current.platform} logo`}
+                    width={40}
+                    height={40}
+                    className="absolute top-4 left-4"
+                  />
                 </article>
               )}
             </div>
@@ -268,7 +305,7 @@ export default function LinkSwipeApp() {
       )}
 
       {showLegal && (
-        <Modal onClose={() => setShowLegal(false)} title="Legal – Terms of Service and Privacy Policy">
+        <Modal onClose={() => setShowLegal(false)} title="Legal – Terms of Use and Privacy Policy">
           <LegalDocs />
         </Modal>
       )}
@@ -286,6 +323,7 @@ function SubmitProfileCard({ onToast, onOpenLegal }: { onToast: (msg: string) =>
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [link, setLink] = useState("");
+  const [platform, setPlatform] = useState(""); // Yeni state eklendi
   const [file, setFile] = useState<File | null>(null);
   const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -295,7 +333,16 @@ function SubmitProfileCard({ onToast, onOpenLegal }: { onToast: (msg: string) =>
   const validate = () => {
     if (!name.trim()) return "Your Name is required";
     if (!username.trim()) return "Your Username is required";
+    if (!platform) return "Please select a platform"; // Yeni validasyon kuralı
     if (!/^https?:\/\//i.test(link)) return "Link must start with http:// or https://";
+
+    // New: Allow only specific links
+    const allowedLinks = ["instagram.com", "x.com", "facebook.com", "tiktok.com"];
+    const isAllowed = allowedLinks.some(domain => link.includes(domain));
+    if (!isAllowed) {
+      return "The link must be for Facebook, X (Twitter), Instagram, or TikTok.";
+    }
+
     if (!file) return "Profile image file is required";
     if (!agreed) return "You must accept the legal terms";
     return null;
@@ -311,10 +358,10 @@ function SubmitProfileCard({ onToast, onOpenLegal }: { onToast: (msg: string) =>
     setSubmitting(true);
 
     // Submitting form information (This is just a frontend placeholder)
-    console.log("Submitting form data:", { name, username, link, file: file?.name });
+    console.log("Submitting form data:", { name, username, link, platform, file: file?.name });
     
     // Open payment link (Gumroad link)
-    window.open("https://gumroad.com/l/GUMROAD_PRODUCT_LINK", "_blank", "noopener,noreferrer");
+    window.open("https://profilehub.gumroad.com/l/jqtpsg", "_blank", "noopener,noreferrer");
 
     // Inform user
     onToast(
@@ -327,6 +374,7 @@ function SubmitProfileCard({ onToast, onOpenLegal }: { onToast: (msg: string) =>
     setName("");
     setUsername("");
     setLink("");
+    setPlatform(""); // Form temizlenirken platform bilgisini de temizle
     setFile(null);
     setAgreed(false);
   };
@@ -356,8 +404,27 @@ function SubmitProfileCard({ onToast, onOpenLegal }: { onToast: (msg: string) =>
         </div>
       </div>
 
+      {/* Yeni eklenen: Platform Seçimi */}
       <div>
-        <label className="block text-sm mb-1">Single Social Media Link</label>
+          <label className="block text-sm mb-1">Platform Seçiniz</label>
+          <p className="text-white/80 text-xs mb-2">Lütfen profilinizin ait olduğu platformu seçin.</p>
+          <select
+              className="w-full rounded-xl border border-white/20 bg-white/10 px-3 py-2 outline-none text-white/90"
+              value={platform}
+              onChange={(e) => setPlatform(e.target.value)}
+              required
+          >
+              <option value="" disabled className="bg-black text-white/50">-- Seçiniz --</option>
+              <option value="instagram" className="bg-black">Instagram</option>
+              <option value="tiktok" className="bg-black">TikTok</option>
+              <option value="twitter" className="bg-black">X (Twitter)</option>
+              <option value="facebook" className="bg-black">Facebook</option>
+          </select>
+      </div>
+
+      <div>
+        <label className="block text-sm mb-1">Social Media Link</label>
+        <p className="text-white/80 text-xs mb-2">Only Facebook, X (Twitter), Instagram, or TikTok links are accepted.</p>
         <input
           className="w-full rounded-xl border border-white/20 bg-white/10 px-3 py-2 outline-none placeholder-white/70"
           placeholder="https://instagram.com/yourusername"
@@ -405,7 +472,7 @@ function SubmitProfileCard({ onToast, onOpenLegal }: { onToast: (msg: string) =>
             onClick={onOpenLegal}
             className="underline decoration-white/40 decoration-2 underline-offset-4"
           >
-            Terms of Service and Privacy Policy
+            Terms of Use, Privacy Policy, and Legal Disclaimer
           </button>
           . I understand that my profile will not be published until approved by an administrator and payment is confirmed.
         </span>
@@ -455,57 +522,105 @@ function LegalDocs() {
   return (
     <div className="space-y-6 text-white/95 text-sm leading-relaxed">
       <section>
-        <h4 className="font-bold text-white text-base">Terms of Service</h4>
+        <h4 className="font-bold text-white text-base">1) Terms of Use</h4>
+        <h5 className="font-bold text-white/95 mt-2">Definitions and Scope</h5>
         <p>
-          LinkSwipe is a discovery tool for public social media links. By submitting content, you
-          confirm that you own the rights to publish, that the content is accurate, legal, and does not
-          infringe on third-party rights. We reserve the right to reject, remove, or moderate any profile
-          at our discretion. Publication is subject to manual review and successful payment.
+          These "Terms of Use" apply to all users of LinkSwipe (hereinafter “Platform”). Anyone who accesses the Platform, creates a profile, shares links, or views content is deemed to have accepted these terms.
+        </p>
+        <h5 className="font-bold text-white/95 mt-2">Acceptance of Terms</h5>
+        <p>
+          By using the Platform, you agree that:
         </p>
         <ul className="list-disc ml-5 mt-2 space-y-1">
-          <li>Your profile must not contain private or sensitive data.</li>
-          <li>No impersonation, spam, or illegal content.</li>
-          <li>Profiles are for promotional purposes; no guarantee of visibility or results.</li>
-          <li>Payments are processed by a PCI-compliant provider; we do not store card data.</li>
-          <li>Payments are non-refundable if you submit content violating the terms.</li>
+          <li>You are over 18 years old.</li>
+          <li>You are acting on your own behalf.</li>
+          <li>You have read and agreed to this document, the Privacy Policy, and other legal documents.</li>
+          <li>You are fully responsible for all content you share.</li>
         </ul>
+        <p className="mt-2">If you do not agree with these terms, please do not use the Platform.</p>
+        <h5 className="font-bold text-white/95 mt-2">User Content and Responsibility</h5>
+        <p>Content uploaded by users:</p>
+        <ul className="list-disc ml-5 mt-2 space-y-1">
+          <li>Name, profile photo, and social media links are entirely owned by the user.</li>
+          <li>Only links from Facebook, TikTok, X (Twitter), or Instagram are accepted. Any other social media platforms or external links will not be published.</li>
+          <li>No copyright infringement, confidential information, or personal data of third parties.</li>
+          <li>No offensive, defamatory, illegal, or harmful content.</li>
+        </ul>
+        <p className="mt-2">The Platform does not pre-screen content. All legal responsibility lies with the user.</p>
+        <h5 className="font-bold text-white/95 mt-2">Prohibited Content</h5>
+        <p>The following content is strictly prohibited:</p>
+        <ul className="list-disc ml-5 mt-2 space-y-1">
+          <li>Hate speech, racism, sexism, calls for violence</li>
+          <li>Pornographic or sexual content</li>
+          <li>Child abuse, drugs, weapons, suicide, or illegal activities</li>
+          <li>Defamation or insults targeting real individuals</li>
+        </ul>
+        <p className="mt-2">Violation may result in content removal, user suspension, and, if necessary, notification to authorities.</p>
+        <h5 className="font-bold text-white/95 mt-2">Payments and Refunds</h5>
+        <p>
+          Users who want to add profiles pay USD 10.
+        </p>
+        <ul className="list-disc ml-5 mt-2 space-y-1">
+          <li>Payments are processed via Gumroad. LinkSwipe does not store any card information.</li>
+          <li>Payments are non-refundable (including site closure, content removal, or technical issues).</li>
+          <li>If users submit links outside of Facebook, TikTok, X (Twitter), or Instagram, the profile will not be published and no refund will be provided.</li>
+        </ul>
+        <h5 className="font-bold text-white/95 mt-2">Service Modification and Suspension</h5>
+        <p>
+          The Platform reserves the right to change, update, suspend, or fully terminate the service without prior notice.
+        </p>
+        <h5 className="font-bold text-white/95 mt-2">Changes to Terms</h5>
+        <p>
+          These terms may be updated from time to time. The most recent version on the website is the valid version.
+          <br/>
+          Last Updated: August 31, 2025
+        </p>
       </section>
 
       <section>
-        <h4 className="font-bold text-white text-base">Privacy Policy</h4>
+        <h4 className="font-bold text-white text-base">2) Privacy and Data Protection Policy</h4>
+        <h5 className="font-bold text-white/95 mt-2">Data Collected</h5>
+        <ul className="list-disc ml-5 mt-2 space-y-1">
+          <li>Profile information entered by users (name, photo, social media links – Facebook, TikTok, X (Twitter), Instagram only)</li>
+          <li>IP address, browser information, session data</li>
+          <li>Payment information processed via Gumroad; LinkSwipe does not store any card or bank information.</li>
+        </ul>
+        <h5 className="font-bold text-white/95 mt-2">Purpose of Data Processing</h5>
+        <ul className="list-disc ml-5 mt-2 space-y-1">
+          <li>Displaying and publishing profiles</li>
+          <li>Technical support and service improvement</li>
+          <li>Compliance with legal obligations</li>
+        </ul>
+        <h5 className="font-bold text-white/95 mt-2">Data Sharing</h5>
         <p>
-          We only collect necessary data (name, username, public link, profile picture) to operate the
-          service. Do not include private information. If you sign in with a third-party
-          provider in the future, your unique user ID will not be publicly displayed.
+          Personal data is not shared, sold, or rented to third parties.
+        </p>
+        <ul className="list-disc ml-5 mt-2 space-y-1">
+          <li>Only shared under court orders or official requests.</li>
+        </ul>
+        <h5 className="font-bold text-white/95 mt-2">Data Retention</h5>
+        <p>
+          User data is retained unless a deletion request is made or legal obligations expire.
         </p>
         <p className="mt-2">
-          Submitted data may be stored on secure cloud infrastructure with strict access controls.
-          You may request deletion of your profile by contacting support.
+          Contact: 📧 llinkswipe@gmail.com
+          <br/>
+          Last Updated: August 31, 2025
         </p>
       </section>
 
       <section>
-        <h4 className="font-bold text-white text-base">Security</h4>
+        <h4 className="font-bold text-white text-base">3) Legal Disclaimer and Copyright</h4>
         <ul className="list-disc ml-5 mt-2 space-y-1">
-          <li>Never include sensitive keys (API keys, database passwords) in client-side code.</li>
-          <li>All sensitive operations (payments, approvals) must be handled server-side.</li>
-          <li>Sanitize and validate all inputs on the server. Use Content Security Policy (CSP).</li>
-          <li>Use HTTPS everywhere and enable HTTP-only, Secure cookies for sessions.</li>
+          <li>Users are responsible for all content they upload (name, photo, social links).</li>
+          <li>Only links from Facebook, TikTok, X (Twitter), or Instagram are accepted. Submissions from other platforms will be rejected without refund.</li>
+          <li>The Platform is not liable for user-generated content.</li>
+          <li>Users confirm that uploaded content does not violate any copyright.</li>
+          <li>Content may be reviewed or removed if complaints are received from third parties.</li>
+          <li>LinkSwipe logo, design, and brand elements cannot be used without permission.</li>
         </ul>
-      </section>
-
-      <section>
-        <h4 className="font-bold text-white text-base">Refunds</h4>
-        <p>
-          Payments are non-refundable once your profile has been reviewed, unless required by law.
-          If your content violates the Terms of Service, your profile may be rejected without a refund.
-        </p>
-      </section>
-
-      <section>
-        <h4 className="font-bold text-white text-base">Contact</h4>
-        <p>
-          For any questions or removal requests: reach out to support@linkswipe.example.
+        <p className="mt-2">
+          Last Updated: August 31, 2025
         </p>
       </section>
     </div>
