@@ -12,7 +12,7 @@ import Image from 'next/image';
  * ✅ Payment button is a placeholder — integrate Gumroad server-side only.
  * ✅ Legal text link + consent checkbox included.
  * ✅ Basic swipe left (Pass) / right (Like → open link) + buttons for accessibility.
- * ✅ Colorful, eye-catching UI. Turkish copy for instructions.
+ * ✅ Colorful, eye-catching UI. English copy for instructions.
  * ✅ "Promote your profile" button moved below cards, opens form as a modal.
  * ✅ Top navigation cleaned up, legal links moved to footer.
  * ✅ Profile card horizontally centered.
@@ -39,7 +39,7 @@ const APPROVED_PROFILES = [
     id: "p2",
     name: "Leo Martinez",
     photoUrl:
-      "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?w=1200&q=80&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?w=1200&q=80&auto=format&fit-crop",
     link: "https://x.com/leomartinez",
     platform: "twitter" // We'll use 'twitter' for X.com
   },
@@ -55,9 +55,17 @@ const APPROVED_PROFILES = [
     id: "p4",
     name: "Chen Wei",
     photoUrl:
-      "https://images.unsplash.com/photo-1560272023-e17540248a31?w=1200&q=80&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1560272023-e17540248a31?w=1200&q=80&auto=format&fit-crop",
     link: "https://tiktok.com/@chenwei",
     platform: "tiktok"
+  },
+  {
+    id: "p5",
+    name: "YouTube Creator",
+    photoUrl:
+      "https://images.unsplash.com/photo-1518791841080-9994c6578c77?w=1200&q=80&auto=format&fit-crop",
+    link: "https://youtube.com/yourchannel",
+    platform: "youtube"
   }
 ];
 
@@ -72,6 +80,8 @@ const getPlatformLogo = (platform: string) => {
       return '/facebook.svg';
     case 'tiktok':
       return '/tiktok.svg';
+    case 'youtube':
+      return '/youtube.svg';
     default:
       return '/globe.svg'; // Fallback logo
   }
@@ -186,7 +196,7 @@ export default function LinkSwipeApp() {
         <section className="grid place-items-center gap-8">
           <div className="w-full max-w-md">
             <div className="mb-4 text-center">
-              <h2 className="text-xl font-bold">Discover social profiles</h2>
+              <h2 className="text-xl font-bold">Discover Social Profiles</h2>
               <p className="text-white/90 text-sm">Swipe left to pass, right to like.</p>
             </div>
 
@@ -194,7 +204,7 @@ export default function LinkSwipeApp() {
               {!current && (
                 <div className="absolute inset-0 flex items-center justify-center rounded-3xl border border-white/20 bg-white/10 p-10 text-center">
                   <div>
-                    <p className="text-lg font-semibold">You&apos;ve seen all profiles ✨</p>
+                    <p className="text-lg font-semibold">You&rsquo;ve seen all profiles ✨</p>
                     <p className="text-white/80 text-sm mt-2">Check back later for new profiles.</p>
                   </div>
                 </div>
@@ -251,15 +261,15 @@ export default function LinkSwipeApp() {
                         </button>
                       </div>
                     </div>
+                    {/* New: Social media logo */}
+                    <Image
+                      src={getPlatformLogo(current.platform)}
+                      alt={`${current.platform} logo`}
+                      width={40}
+                      height={40}
+                      className="absolute top-4 left-4"
+                    />
                   </div>
-                  {/* Yeni eklenen: Sosyal medya logosu */}
-                  <Image
-                    src={getPlatformLogo(current.platform)}
-                    alt={`${current.platform} logo`}
-                    width={40}
-                    height={40}
-                    className="absolute top-4 left-4"
-                  />
                 </article>
               )}
             </div>
@@ -295,7 +305,7 @@ export default function LinkSwipeApp() {
                 Legal
             </a>
         </div>
-        <p>© {new Date().getFullYear()} Link Swipe. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} Link Swipe. All rights reserved.</p>
       </footer>
 
       {showSubmit && (
@@ -305,7 +315,7 @@ export default function LinkSwipeApp() {
       )}
 
       {showLegal && (
-        <Modal onClose={() => setShowLegal(false)} title="Legal – Terms of Use and Privacy Policy">
+        <Modal onClose={() => setShowLegal(false)} title="Legal &ndash; Terms of Use and Privacy Policy">
           <LegalDocs />
         </Modal>
       )}
@@ -323,7 +333,7 @@ function SubmitProfileCard({ onToast, onOpenLegal }: { onToast: (msg: string) =>
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [link, setLink] = useState("");
-  const [platform, setPlatform] = useState(""); // Yeni state eklendi
+  const [platform, setPlatform] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -333,14 +343,14 @@ function SubmitProfileCard({ onToast, onOpenLegal }: { onToast: (msg: string) =>
   const validate = () => {
     if (!name.trim()) return "Your Name is required";
     if (!username.trim()) return "Your Username is required";
-    if (!platform) return "Please select a platform"; // Yeni validasyon kuralı
+    if (!platform) return "Please select a platform";
     if (!/^https?:\/\//i.test(link)) return "Link must start with http:// or https://";
 
     // New: Allow only specific links
-    const allowedLinks = ["instagram.com", "x.com", "facebook.com", "tiktok.com"];
+    const allowedLinks = ["instagram.com", "x.com", "facebook.com", "tiktok.com", "youtube.com", "youtu.be"];
     const isAllowed = allowedLinks.some(domain => link.includes(domain));
     if (!isAllowed) {
-      return "The link must be for Facebook, X (Twitter), Instagram, or TikTok.";
+      return "The link must be for Facebook, X (Twitter), Instagram, TikTok, or YouTube.";
     }
 
     if (!file) return "Profile image file is required";
@@ -374,7 +384,7 @@ function SubmitProfileCard({ onToast, onOpenLegal }: { onToast: (msg: string) =>
     setName("");
     setUsername("");
     setLink("");
-    setPlatform(""); // Form temizlenirken platform bilgisini de temizle
+    setPlatform("");
     setFile(null);
     setAgreed(false);
   };
@@ -404,27 +414,28 @@ function SubmitProfileCard({ onToast, onOpenLegal }: { onToast: (msg: string) =>
         </div>
       </div>
 
-      {/* Yeni eklenen: Platform Seçimi */}
+      {/* New: Platform Selection */}
       <div>
-          <label className="block text-sm mb-1">Platform Seçiniz</label>
-          <p className="text-white/80 text-xs mb-2">Lütfen profilinizin ait olduğu platformu seçin.</p>
+          <label className="block text-sm mb-1">Select Platform</label>
+          <p className="text-white/80 text-xs mb-2">Please select the platform your profile belongs to.</p>
           <select
               className="w-full rounded-xl border border-white/20 bg-white/10 px-3 py-2 outline-none text-white/90"
               value={platform}
               onChange={(e) => setPlatform(e.target.value)}
               required
           >
-              <option value="" disabled className="bg-black text-white/50">-- Seçiniz --</option>
-              <option value="instagram" className="bg-black">Instagram</option>
-              <option value="tiktok" className="bg-black">TikTok</option>
-              <option value="twitter" className="bg-black">X (Twitter)</option>
-              <option value="facebook" className="bg-black">Facebook</option>
+              <option value="" disabled className="bg-black text-white/50">-- Select --</option>
+              <option value="instagram" className="bg-black text-white">Instagram</option>
+              <option value="tiktok" className="bg-black text-white">TikTok</option>
+              <option value="twitter" className="bg-black text-white">X (Twitter)</option>
+              <option value="facebook" className="bg-black text-white">Facebook</option>
+              <option value="youtube" className="bg-black text-white">YouTube</option>
           </select>
       </div>
 
       <div>
         <label className="block text-sm mb-1">Social Media Link</label>
-        <p className="text-white/80 text-xs mb-2">Only Facebook, X (Twitter), Instagram, or TikTok links are accepted.</p>
+        <p className="text-white/80 text-xs mb-2">Only Facebook, X (Twitter), Instagram, TikTok, or YouTube links are accepted.</p>
         <input
           className="w-full rounded-xl border border-white/20 bg-white/10 px-3 py-2 outline-none placeholder-white/70"
           placeholder="https://instagram.com/yourusername"
@@ -465,16 +476,15 @@ function SubmitProfileCard({ onToast, onOpenLegal }: { onToast: (msg: string) =>
           className="mt-1"
         />
         <span>
-          {" "}
-          I have read and agree to the{" "}
-          <button
-            type="button"
-            onClick={onOpenLegal}
-            className="underline decoration-white/40 decoration-2 underline-offset-4"
-          >
-            Terms of Use, Privacy Policy, and Legal Disclaimer
-          </button>
-          . I understand that my profile will not be published until approved by an administrator and payment is confirmed.
+            I have read and agree to the
+            <button
+                type="button"
+                onClick={onOpenLegal}
+                className="underline decoration-white/40 decoration-2 underline-offset-4"
+            >
+                Terms of Use, Privacy Policy, and Legal Disclaimer
+            </button>
+            . I understand that my profile will not be published until approved by an administrator and payment is confirmed.
         </span>
       </label>
 
@@ -525,7 +535,7 @@ function LegalDocs() {
         <h4 className="font-bold text-white text-base">1) Terms of Use</h4>
         <h5 className="font-bold text-white/95 mt-2">Definitions and Scope</h5>
         <p>
-          These "Terms of Use" apply to all users of LinkSwipe (hereinafter “Platform”). Anyone who accesses the Platform, creates a profile, shares links, or views content is deemed to have accepted these terms.
+          These &ldquo;Terms of Use&rdquo; apply to all users of LinkSwipe (hereinafter &ldquo;Platform&rdquo;). Anyone who accesses the Platform, creates a profile, shares links, or views content is deemed to have accepted these terms.
         </p>
         <h5 className="font-bold text-white/95 mt-2">Acceptance of Terms</h5>
         <p>
@@ -542,7 +552,7 @@ function LegalDocs() {
         <p>Content uploaded by users:</p>
         <ul className="list-disc ml-5 mt-2 space-y-1">
           <li>Name, profile photo, and social media links are entirely owned by the user.</li>
-          <li>Only links from Facebook, TikTok, X (Twitter), or Instagram are accepted. Any other social media platforms or external links will not be published.</li>
+          <li>Only links from Facebook, TikTok, X (Twitter), Instagram, or YouTube are accepted. Any other social media platforms or external links will not be published.</li>
           <li>No copyright infringement, confidential information, or personal data of third parties.</li>
           <li>No offensive, defamatory, illegal, or harmful content.</li>
         </ul>
@@ -563,7 +573,7 @@ function LegalDocs() {
         <ul className="list-disc ml-5 mt-2 space-y-1">
           <li>Payments are processed via Gumroad. LinkSwipe does not store any card information.</li>
           <li>Payments are non-refundable (including site closure, content removal, or technical issues).</li>
-          <li>If users submit links outside of Facebook, TikTok, X (Twitter), or Instagram, the profile will not be published and no refund will be provided.</li>
+          <li>If users submit links outside of Facebook, TikTok, X (Twitter), Instagram, or YouTube, the profile will not be published and no refund will be provided.</li>
         </ul>
         <h5 className="font-bold text-white/95 mt-2">Service Modification and Suspension</h5>
         <p>
@@ -581,7 +591,7 @@ function LegalDocs() {
         <h4 className="font-bold text-white text-base">2) Privacy and Data Protection Policy</h4>
         <h5 className="font-bold text-white/95 mt-2">Data Collected</h5>
         <ul className="list-disc ml-5 mt-2 space-y-1">
-          <li>Profile information entered by users (name, photo, social media links – Facebook, TikTok, X (Twitter), Instagram only)</li>
+          <li>Profile information entered by users (name, photo, social media links &ndash; Facebook, TikTok, X (Twitter), Instagram, YouTube only)</li>
           <li>IP address, browser information, session data</li>
           <li>Payment information processed via Gumroad; LinkSwipe does not store any card or bank information.</li>
         </ul>
@@ -613,7 +623,7 @@ function LegalDocs() {
         <h4 className="font-bold text-white text-base">3) Legal Disclaimer and Copyright</h4>
         <ul className="list-disc ml-5 mt-2 space-y-1">
           <li>Users are responsible for all content they upload (name, photo, social links).</li>
-          <li>Only links from Facebook, TikTok, X (Twitter), or Instagram are accepted. Submissions from other platforms will be rejected without refund.</li>
+          <li>Only links from Facebook, TikTok, X (Twitter), Instagram, or YouTube are accepted. Submissions from other platforms will be rejected without refund.</li>
           <li>The Platform is not liable for user-generated content.</li>
           <li>Users confirm that uploaded content does not violate any copyright.</li>
           <li>Content may be reviewed or removed if complaints are received from third parties.</li>
