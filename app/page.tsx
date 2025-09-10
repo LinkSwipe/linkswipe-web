@@ -4,7 +4,6 @@ import React, { useState, useRef, useEffect } from "react";
 import { getFirestore, collection, getDocs, query, where } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getApps, initializeApp } from "firebase/app";
-import Image from "next/image";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAuU15H3qlQzZVKWlYOhpeZN-1_zL18IKA",
@@ -38,6 +37,7 @@ const getPlatformLogo = (platform: string) => {
   }
 };
 
+// Modal component
 const Modal = ({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
@@ -55,7 +55,6 @@ const Modal = ({ title, children, onClose }: { title: string; children: React.Re
 
 export default function LinkSwipeApp() {
   const [index, setIndex] = useState(0);
-  const [showForm, setShowForm] = useState(false);
   const [modalType, setModalType] = useState<"termsOfUse"|"privacyPolicy"|"legalDisclaimer"|null>(null);
   const [profiles, setProfiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +64,6 @@ export default function LinkSwipeApp() {
   const currentX = useRef(0);
   const dragging = useRef(false);
 
-  // Firebase'den profilleri çek
   useEffect(() => {
     const fetchProfiles = async () => {
       try {
@@ -104,7 +102,6 @@ export default function LinkSwipeApp() {
     setIndex(i => i + 1);
   };
 
-  // Mouse & touch events
   const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => { dragging.current = true; startX.current = e.clientX; currentX.current = startX.current; };
   const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!dragging.current || !cardRef.current) return;
@@ -135,6 +132,11 @@ export default function LinkSwipeApp() {
     <div className="min-h-screen w-full bg-gradient-to-br from-fuchsia-500 via-sky-500 to-emerald-400 text-white">
       <header className="mx-auto max-w-5xl px-4 py-6 flex items-center justify-between">
         <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight drop-shadow-sm">Link Swipe</h1>
+        <div className="flex gap-2">
+          <button onClick={() => setModalType("termsOfUse")} className="underline text-sm">Terms of Use</button>
+          <button onClick={() => setModalType("privacyPolicy")} className="underline text-sm">Privacy Policy</button>
+          <button onClick={() => setModalType("legalDisclaimer")} className="underline text-sm">Legal Disclaimer</button>
+        </div>
       </header>
 
       <main className="mx-auto max-w-5xl px-4 pb-24">
@@ -150,16 +152,14 @@ export default function LinkSwipeApp() {
                 <div className="absolute inset-0 flex items-center justify-center rounded-3xl border border-white/20 bg-white/10 p-10 text-center">
                   <p className="text-lg font-semibold">Loading profiles...</p>
                 </div>
-              ) : !current && (
+              ) : !current ? (
                 <div className="absolute inset-0 flex items-center justify-center rounded-3xl border border-white/20 bg-white/10 p-10 text-center">
                   <div>
                     <p className="text-lg font-semibold">You&rsquo;ve seen all profiles ✨</p>
                     <p className="text-white/80 text-sm mt-2">Check back later for new profiles.</p>
                   </div>
                 </div>
-              )}
-
-              {current && (
+              ) : (
                 <article
                   ref={cardRef}
                   className="absolute inset-0 rounded-3xl overflow-hidden shadow-2xl border border-white/10 bg-black/30 backdrop-blur-xl"
@@ -172,4 +172,35 @@ export default function LinkSwipeApp() {
                   onTouchEnd={onPointerUp}
                 >
                   <div className="block w-full h-full">
+                    {/* JSX hatası düzeltildi: img kapanışı düzgün */}
                     <img src={current.photoUrl} alt={current.name} className="h-4/5 w-full object-cover transition" draggable={false} />
+                    <div className="p-4">
+                      <h3 className="text-lg font-bold">{current.name}</h3>
+                      <div className="flex gap-2 mt-2">
+                        {current.links?.map((link: any, idx: number) => (
+                          <img key={idx} src={getPlatformLogo(link.platform)} alt={link.platform} className="w-6 h-6" />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              )}
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* Modals */}
+      {modalType === "termsOfUse" && (
+        <Modal title="Terms of Use" onClose={() => setModalType(null)}>
+          <p>These “Terms of Use” apply to all users of LinkSwipe. Anyone accessing the Platform, creating a profile, or sharing a link accepts these terms.</p>
+          <ul className="list-disc ml-5 mt-2">
+            <li>Users are over 18 years of age.</li>
+            <li>Responsible for all content they share.</li>
+            <li>Agree to Privacy Policy and other legal documents.</li>
+          </ul>
+        </Modal>
+      )}
+      {modalType === "privacyPolicy" && (
+        <Modal title="Privacy & Data Protection" onClose={() => setModalType(null)}>
+          <p>Data collecte
