@@ -22,18 +22,12 @@ const storage = getStorage(app);
 // Platform logos
 const getPlatformLogo = (platform: string) => {
   switch (platform) {
-    case 'instagram':
-      return '/instagram.svg';
-    case 'twitter':
-      return '/twitter.svg';
-    case 'facebook':
-      return '/facebook.svg';
-    case 'tiktok':
-      return '/tiktok.svg';
-    case 'youtube':
-      return '/youtube.svg';
-    default:
-      return '/globe.svg';
+    case 'instagram': return '/instagram.svg';
+    case 'twitter': return '/twitter.svg';
+    case 'facebook': return '/facebook.svg';
+    case 'tiktok': return '/tiktok.svg';
+    case 'youtube': return '/youtube.svg';
+    default: return '/globe.svg';
   }
 };
 
@@ -172,7 +166,6 @@ export default function LinkSwipeApp() {
                   onTouchEnd={onPointerUp}
                 >
                   <div className="block w-full h-full">
-                    {/* JSX hatası düzeltildi: img kapanışı düzgün */}
                     <img src={current.photoUrl} alt={current.name} className="h-4/5 w-full object-cover transition" draggable={false} />
                     <div className="p-4">
                       <h3 className="text-lg font-bold">{current.name}</h3>
@@ -203,4 +196,21 @@ export default function LinkSwipeApp() {
       )}
       {modalType === "privacyPolicy" && (
         <Modal title="Privacy & Data Protection" onClose={() => setModalType(null)}>
-          <p>Data collecte
+          <p>We collect basic profile information to display on the platform. No sensitive data is shared publicly.</p>
+          <p>All data is stored securely in Firebase and will not be sold or shared with third parties.</p>
+          <p>Users can request data deletion at any time.</p>
+        </Modal>
+      )}
+      {modalType === "legalDisclaimer" && (
+        <Modal title="Legal Disclaimer & Copyright" onClose={() => setModalType(null)}>
+          <p>Users are responsible for all content they upload. LinkSwipe is not liable for user-generated content.</p>
+          <p>All logos and content remain the property of their respective owners.</p>
+        </Modal>
+      )}
+
+      <footer className="mx-auto max-w-5xl px-4 py-6 text-center text-white/80 text-sm">
+        &copy; 2025 LinkSwipe. All rights reserved.
+      </footer>
+    </div>
+  );
+}
