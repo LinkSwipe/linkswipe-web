@@ -1,66 +1,329 @@
 "use client";
+  
+import React, { useState, useRef, useEffect } from "react";
+import { getFirestore, collection, getDocs, query, where } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getApps, initializeApp } from "firebase/app";
 
-import React, { useMemo, useRef, useState } from "react";
-import Image from 'next/image';
+const firebaseConfig = {
+  apiKey: "AIzaSyAuU15H3qlQzZVKWlYOhpeZN-1_zL18IKA",
+  authDomain: "linkswipe-app.firebaseapp.com",
+  projectId: "linkswipe-app",
+  storageBucket: "linkswipe-app.firebasestorage.app",
+  messagingSenderId: "392732526585",
+  appId: "1:392732526585:web:7ff0a025b54990ab81df28",
+};
 
-/**
- * LinkSwipe — MVP (Frontend-only)
- * ------------------------------------------------------------
- * ✅ No secrets, API keys, or private tokens in client code.
- * ✅ Admin manually adds APPROVED_PROFILES below (hardcoded or fetch from a public JSON).
- * ✅ Users can submit a profile request (not published until admin approval & payment).
- * ✅ Payment button is a placeholder — integrate Gumroad server-side only.
- * ✅ Legal text link + consent checkbox included.
- * ✅ Basic swipe left (Pass) / right (Like → open link) + buttons for accessibility.
- * ✅ Colorful, eye-catching UI. Turkish copy for instructions.
- * ✅ "Promote your profile" button moved below cards, opens form as a modal.
- * ✅ Top navigation cleaned up, legal links moved to footer.
- * ✅ Profile card horizontally centered.
- * ✅ Consolidated "Pay" and "Submit" buttons into a single "Pay to Promote" button.
- */
+const apps = getApps();
+const app = !apps.length ? initializeApp(firebaseConfig) : apps[0];
+const db = getFirestore(app);
+const storage = getStorage(app);
 
-// ------------------------------------------------------------
-// Admin: manually manage public, approved & paid profiles here
-// (These appear in the swipe deck). Replace with your real data.
-// You can also host a public JSON file and fetch it at runtime.
-// ------------------------------------------------------------
-const APPROVED_PROFILES = [
-  {
-    id: "p1",
-    name: "Maya Collins",
-    photoUrl:
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=1200&q=80&auto=format&fit=crop",
-    link: "https://instagram.com/"
-  },
-  {
-    id: "p2",
-    name: "Leo Martinez",
-    photoUrl:
-      "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?w=1200&q=80&auto=format&fit=crop",
-    link: "https://tiktok.com/"
-  },
-  {
-    id: "p3",
-    name: "Aiko Tanaka",
-    photoUrl:
-      "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=1200&q=80&auto=format&fit=crop",
-    link: "https://youtube.com/"
+const getPlatformLogo = (platform) => {
+  switch (platform) {
+    case 'instagram':
+      return 'https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg';
+    case 'twitter':
+      return 'https://upload.wikimedia.org/wikipedia/commons/6/6f/Logo_of_Twitter.svg';
+    case 'facebook':
+      return 'https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg';
+    case 'tiktok':
+      return 'https://upload.wikimedia.org/wikipedia/commons/8/85/TikTok_logo.svg';
+    case 'youtube':
+      return 'https://upload.wikimedia.org/wikipedia/commons/4/42/YouTube_icon_%282013-2017%29.png';
+    default:
+      return 'https://upload.wikimedia.org/wikipedia/commons/9/91/Globe_icon.svg';
   }
-];
+};
 
-export default function LinkSwipeApp() {
+const Modal = ({ title, content, onClose }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+    <div className="bg-white text-black p-8 rounded-2xl max-w-xl w-full max-h-[80vh] overflow-y-auto relative">
+      <h2 className="text-2xl font-bold mb-4">{title}</h2>
+      <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition">
+        ✖
+      </button>
+      <div className="prose prose-sm max-w-none">
+        {content}
+      </div>
+    </div>
+  </div>
+);
+
+const LegalContent = {
+  termsOfUse: {
+    title: "Terms of Use",
+    text: (
+      <div className="space-y-4">
+        <h3 className="text-lg font-bold">Definitions and Scope</h3>
+        <p>These “Terms of Use” apply to all users of LinkSwipe (hereinafter referred to as the “Platform”). It is assumed that anyone who accesses the Platform, creates a profile, shares a link, or views content accepts these terms.</p>
+        <h3 className="text-lg font-bold">Acceptance of Terms</h3>
+        <p>By using the Platform, you agree to the following:</p>
+        <ul className="list-disc list-inside">
+          <li>You are over 18 years of age.</li>
+          <li>You are acting on your own behalf.</li>
+          <li>You have read and accepted this document, the Privacy Policy, and other legal documents.</li>
+          <li>You are fully responsible for all content you share.</li>
+        </ul>
+        <p>If you do not agree to these terms, please do not use the Platform.</p>
+        <h3 className="text-lg font-bold">User Content and Responsibility</h3>
+        <p>Content uploaded by users:</p>
+        <ul className="list-disc list-inside">
+          <li>The ownership of the name, profile photo, and social media links belongs entirely to the user.</li>
+          <li>Only Facebook, TikTok, X (Twitter), Instagram, or YouTube links are accepted. Other social media platforms or external links will not be published.</li>
+          <li>Does not contain copyright infringement, confidential information, or personal data of third parties.</li>
+          <li>Does not contain defamatory, libelous, illegal, or harmful content.</li>
+        </ul>
+        <p>The Platform does not pre-screen content. All legal responsibility rests with the user.</p>
+        <h3 className="text-lg font-bold">Prohibited Content</h3>
+        <p>The following content is strictly prohibited:</p>
+        <ul className="list-disc list-inside">
+          <li>Hate speech, racism, sexism, incitement to violence</li>
+          <li>Pornographic or sexually explicit content</li>
+          <li>Child abuse, drugs, weapons, suicide, or illegal activities</li>
+          <li>Defamation or libel against real persons</li>
+        </ul>
+        <p>Violation may result in the removal of the content, suspension of the user, and notification to authorities if deemed necessary.</p>
+        <h3 className="text-lg font-bold">Payments and Refunds</h3>
+        <p>Users who want to add a profile pay 10 USD.</p>
+        <p>Payments are processed via Gumroad. LinkSwipe does not store any card information.</p>
+        <p>Payments are non-refundable (including site closure, content removal, or technical issues).</p>
+        <p>If users submit links other than Facebook, TikTok, X (Twitter), Instagram, or YouTube, the profile will not be published, and no refund will be issued.</p>
+        <h3 className="text-lg font-bold">Service Changes and Suspension</h3>
+        <p>The Platform reserves the right to change, update, suspend, or completely terminate the service without prior notice.</p>
+        <h3 className="text-lg font-bold">Changes to Terms</h3>
+        <p>These terms may be updated from time to time. The most recent version on the website is the valid version.</p>
+        <p>Last Updated: August 31, 2025</p>
+      </div>
+    ),
+  },
+  privacyPolicy: {
+    title: "Privacy and Data Protection",
+    text: (
+      <div className="space-y-4">
+        <h3 className="text-lg font-bold">Data Collected</h3>
+        <ul className="list-disc list-inside">
+          <li>Profile information entered by users (name, photo, social media links – only Facebook, TikTok, X (Twitter), Instagram, YouTube)</li>
+          <li>IP address, browser information, session data</li>
+          <li>Payment information processed via Gumroad; LinkSwipe does not store any card or bank information.</li>
+        </ul>
+        <h3 className="text-lg font-bold">Purpose of Data Processing</h3>
+        <ul className="list-disc list-inside">
+          <li>Displaying and publishing profiles</li>
+          <li>Technical support and service improvement</li>
+          <li>Compliance with legal obligations</li>
+        </ul>
+        <h3 className="text-lg font-bold">Data Sharing</h3>
+        <ul className="list-disc list-inside">
+          <li>Personal data is not shared, sold, or rented to third parties.</li>
+          <li>It is only shared in compliance with court orders or official requests.</li>
+        </ul>
+        <h3 className="text-lg font-bold">Data Retention</h3>
+        <p>User data is retained unless a deletion request is received or legal obligations are fulfilled.</p>
+        <p>Contact: 📧 llinkswipe@gmail.com</p>
+        <p>Last Updated: August 31, 2025</p>
+      </div>
+    ),
+  },
+  legalDisclaimer: {
+    title: "Legal Disclaimer and Copyright Policy",
+    text: (
+      <div className="space-y-4">
+        <p>Users are responsible for all content they upload (name, photo, social links).</p>
+        <p>Only Facebook, TikTok, X (Twitter), Instagram, or YouTube links are accepted. Submissions from other platforms will be rejected without a refund.</p>
+        <p>The Platform is not responsible for user-generated content.</p>
+        <p>Users confirm that the uploaded content does not infringe on any copyright.</p>
+        <p>In case of a complaint from a third party, the content may be reviewed or removed.</p>
+        <p>The LinkSwipe logo, design, and brand elements may not be used without permission.</p>
+        <p>Last Updated: August 31, 2025</p>
+      </div>
+    ),
+  }
+};
+
+const ProfileForm = ({ onClose }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    description: '',
+    photoFile: null,
+    link: '',
+    platform: ''
+  });
+  const [descriptionLength, setDescriptionLength] = useState(0);
+  const [isAgreed, setIsAgreed] = useState(false);
+  const [modalType, setModalType] = useState(null);
+  const [submissionStatus, setSubmissionStatus] = useState('');
+
+  const handleChange = (e) => {
+    const { name, value, files } = e.target;
+    if (name === 'description') {
+      setDescriptionLength(value.length);
+    }
+    setFormData(prevData => ({
+      ...prevData,
+      [name]: files ? files[0] : value
+    }));
+  };
+
+  const handleAgreementChange = (e) => {
+    setIsAgreed(e.target.checked);
+  };
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    setSubmissionStatus('Submitting your profile...');
+
+    if (!formData.photoFile) {
+        setSubmissionStatus('Please select a photo.');
+        return;
+    }
+
+    const dataToSend = new FormData();
+    dataToSend.append('name', formData.name);
+    dataToSend.append('email', formData.email);
+    dataToSend.append('description', formData.description);
+    dataToSend.append('photoFile', formData.photoFile);
+    dataToSend.append('link', formData.link);
+    dataToSend.append('platform', formData.platform);
+
+    try {
+        const response = await fetch('/api/submit-profile', {
+            method: 'POST',
+            body: dataToSend,
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Something went wrong.');
+        }
+
+        const result = await response.json();
+        console.log(result.message);
+
+        setSubmissionStatus('Profile submitted! Redirecting to payment page...');
+        window.location.href = "https://linkswipe.gumroad.com/l/xziod";
+
+    } catch (error) {
+        console.error("Error submitting profile:", error);
+        setSubmissionStatus(`An error occurred: ${error.message}. Please try again.`);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="p-8 rounded-3xl bg-white/10 shadow-xl border border-white/20">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-bold">Submit Your Profile for Review</h3>
+        <button onClick={onClose} className="text-white/60 hover:text-white transition" aria-label="Close">
+            ✖
+        </button>
+      </div>
+      <div className="space-y-4">
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium mb-1">Name</label>
+          <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} required className="w-full p-2 rounded-lg bg-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-sky-400" />
+        </div>
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium mb-1">Email</label>
+          <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} placeholder="llinkswipe@gmail.com" required className="w-full p-2 rounded-lg bg-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-sky-400" />
+        </div>
+        <div>
+          <label htmlFor="description" className="block text-sm font-medium mb-1">
+            Brief Description <span className="text-white/70">({descriptionLength}/100)</span>
+          </label>
+          <textarea
+            id="description"
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            required
+            rows="3"
+            maxLength={100}
+            className="w-full p-2 rounded-lg bg-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-sky-400"
+            placeholder="e.g., 'I'm a digital artist sharing my journey.'"
+          ></textarea>
+        </div>
+        <div>
+          <label htmlFor="photoFile" className="block text-sm font-medium mb-1">Photo</label>
+          <input type="file" id="photoFile" name="photoFile" onChange={handleChange} required className="w-full text-white/70 file:bg-sky-500/90 file:border-none file:rounded-lg file:text-white file:py-2 file:px-4 file:mr-4 file:font-semibold hover:file:bg-sky-500 transition" accept="image/*" />
+        </div>
+        <div>
+          <label htmlFor="link" className="block text-sm font-medium mb-1">Profile Link</label>
+          <input type="url" id="link" name="link" value={formData.link} onChange={handleChange} required className="w-full p-2 rounded-lg bg-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-sky-400" />
+        </div>
+        <div>
+          <label htmlFor="platform" className="block text-sm font-medium mb-1">Platform</label>
+          <select id="platform" name="platform" value={formData.platform} onChange={handleChange} required className="w-full p-2 rounded-lg bg-white/20 text-white focus:outline-none focus:ring-2 focus:ring-sky-400">
+            <option value="" disabled className="bg-gray-700">Select a platform</option>
+            <option value="tiktok" className="bg-gray-700">TikTok</option>
+            <option value="youtube" className="bg-gray-700">YouTube</option>
+            <option value="instagram" className="bg-gray-700">Instagram</option>
+            <option value="twitter" className="bg-gray-700">X (Twitter)</option>
+            <option value="facebook" className="bg-gray-700">Facebook</option>
+          </select>
+        </div>
+      </div>
+      <div className="mt-4 flex items-start text-sm">
+        <input type="checkbox" id="legal-agreement" checked={isAgreed} onChange={handleAgreementChange} required className="mt-1 mr-2 rounded" />
+        <label htmlFor="legal-agreement">
+          I have read and agree to the <a href="#" onClick={() => setModalType('termsOfUse')} className="underline text-sky-300 hover:text-sky-400">Terms of Use</a>, <a href="#" onClick={() => setModalType('privacyPolicy')} className="underline text-sky-300 hover:text-sky-400">Privacy and Data Protection</a> and <a href="#" onClick={() => setModalType('legalDisclaimer')} className="underline text-sky-300 hover:text-sky-400">Legal Disclaimer and Copyright Policy</a>.
+        </label>
+      </div>
+      
+      {submissionStatus && (
+        <p className="mt-4 text-center text-sm font-semibold">{submissionStatus}</p>
+      )}
+
+      <button type="submit" disabled={!isAgreed} className={`mt-6 w-full rounded-2xl transition shadow-lg px-6 py-3 text-lg font-semibold ${!isAgreed ? 'bg-gray-500/90 cursor-not-allowed' : 'bg-emerald-500/90 hover:bg-emerald-500'}`}>
+        Submit Profile
+      </button>
+
+      {modalType && (
+        <Modal
+          title={LegalContent[modalType].title}
+          content={LegalContent[modalType].text}
+          onClose={() => setModalType(null)}
+        />
+      )}
+    </form>
+  );
+};
+
+
+export default function Home() {
   const [index, setIndex] = useState(0);
-  const [showSubmit, setShowSubmit] = useState(false);
-  const [showLegal, setShowLegal] = useState(false);
-  const [toast, setToast] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [modalType, setModalType] = useState(null);
+  const [profiles, setProfiles] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const current = APPROVED_PROFILES[index] ?? null;
-
-  // Swipe gesture refs
-  const cardRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef(null);
   const startX = useRef(0);
   const currentX = useRef(0);
   const dragging = useRef(false);
+
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      try {
+        const q = query(collection(db, "profiles"), where("status", "==", "approved"));
+        const querySnapshot = await getDocs(q);
+        const fetchedProfiles = [];
+        querySnapshot.forEach((doc) => {
+          fetchedProfiles.push({ id: doc.id, ...doc.data() });
+        });
+        setProfiles(fetchedProfiles);
+      } catch (error) {
+        console.error("Error fetching profiles:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfiles();
+  }, []);
+
+  const current = profiles[index] ?? null;
 
   const resetTransform = () => {
     if (cardRef.current) {
@@ -73,22 +336,21 @@ export default function LinkSwipeApp() {
     }
   };
 
-  const handleSwipeDecision = (dir: "left" | "right") => {
+  const handleSwipeDecision = (dir) => {
     if (!current) return;
     if (dir === "right") {
       window.open(current.link, "_blank", "noopener,noreferrer");
     }
     setIndex((i) => i + 1);
   };
-  
-  // Düzeltme: Olay işleyicilerini ayrı ayrı tanımladık
-  const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+
+  const onMouseDown = (e) => {
     dragging.current = true;
     startX.current = e.clientX;
     currentX.current = startX.current;
   };
 
-  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const onMouseMove = (e) => {
     if (!dragging.current || !cardRef.current) return;
     const x = e.clientX;
     currentX.current = x;
@@ -97,14 +359,14 @@ export default function LinkSwipeApp() {
     cardRef.current.style.transform = `translateX(${dx}px) rotate(${rot}deg)`;
     cardRef.current.style.opacity = `${Math.max(0.6, 1 - Math.abs(dx) / 600)}`;
   };
-  
-  const onTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+
+  const onTouchStart = (e) => {
     dragging.current = true;
     startX.current = e.touches[0].clientX;
     currentX.current = startX.current;
   };
 
-  const onTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+  const onTouchMove = (e) => {
     if (!dragging.current || !cardRef.current) return;
     const x = e.touches[0].clientX;
     currentX.current = x;
@@ -114,14 +376,12 @@ export default function LinkSwipeApp() {
     cardRef.current.style.opacity = `${Math.max(0.6, 1 - Math.abs(dx) / 600)}`;
   };
 
-
   const onPointerUp = () => {
     if (!dragging.current || !cardRef.current) return;
     dragging.current = false;
     const dx = currentX.current - startX.current;
     const threshold = 90;
     if (dx > threshold) {
-      // swipe right
       cardRef.current.style.transition = "transform 220ms ease, opacity 220ms ease";
       cardRef.current.style.transform = "translateX(500px) rotate(20deg)";
       cardRef.current.style.opacity = "0";
@@ -129,7 +389,6 @@ export default function LinkSwipeApp() {
       return;
     }
     if (dx < -threshold) {
-      // swipe left
       cardRef.current.style.transition = "transform 220ms ease, opacity 220ms ease";
       cardRef.current.style.transform = "translateX(-500px) rotate(-20deg)";
       cardRef.current.style.opacity = "0";
@@ -137,12 +396,6 @@ export default function LinkSwipeApp() {
       return;
     }
     resetTransform();
-  };
-
-  // Toast helper
-  const pushToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(""), 2600);
   };
 
   return (
@@ -157,15 +410,19 @@ export default function LinkSwipeApp() {
         <section className="grid place-items-center gap-8">
           <div className="w-full max-w-md">
             <div className="mb-4 text-center">
-              <h2 className="text-xl font-bold">Discover social profiles</h2>
+              <h2 className="text-xl font-bold">Discover Social Profiles</h2>
               <p className="text-white/90 text-sm">Swipe left to pass, right to like.</p>
             </div>
 
             <div className="relative h-[520px] select-none mx-auto">
-              {!current && (
+              {loading ? (
+                <div className="absolute inset-0 flex items-center justify-center rounded-3xl border border-white/20 bg-white/10 p-10 text-center">
+                    <p className="text-lg font-semibold">Loading profiles...</p>
+                </div>
+              ) : !current && (
                 <div className="absolute inset-0 flex items-center justify-center rounded-3xl border border-white/20 bg-white/10 p-10 text-center">
                   <div>
-                    <p className="text-lg font-semibold">You&apos;ve seen all profiles ✨</p>
+                    <p className="text-lg font-semibold">You've seen all the profiles ✨</p>
                     <p className="text-white/80 text-sm mt-2">Check back later for new profiles.</p>
                   </div>
                 </div>
@@ -183,43 +440,53 @@ export default function LinkSwipeApp() {
                   onTouchMove={onTouchMove}
                   onTouchEnd={onPointerUp}
                 >
-                  <div className="block w-full h-full group">
-                    <Image
+                  <div className="block w-full h-full">
+                    <img
                       src={current.photoUrl}
                       alt={current.name}
-                      width={1200}
-                      height={900}
-                      className="h-4/5 w-full object-cover transition group-hover:opacity-95"
+                      className="h-4/5 w-full object-cover transition"
                       draggable={false}
                     />
-                    <div className="h-1/5 w-full flex items-center justify-between px-5 bg-gradient-to-t from-black/60 to-transparent -mt-16 pt-16">
-                      <div>
-                        <h3 className="text-2xl font-extrabold drop-shadow-sm">{current.name}</h3>
-                        <p className="text-white/85 text-sm">Click to open profile</p>
+                    <div className="absolute inset-x-0 bottom-0 h-1/5 flex flex-col justify-end px-5 pb-4 bg-gradient-to-t from-black/60 to-transparent pt-20">
+                      <div className="flex justify-between items-center mb-2">
+                        <div>
+                          <h3 className="text-2xl font-extrabold drop-shadow-sm">{current.name}</h3>
+                          <p className="text-white/85 text-sm">{current.description}</p>
+                        </div>
+                        <img
+                          src={getPlatformLogo(current.platform)}
+                          alt={`${current.platform} logo`}
+                          width={40}
+                          height={40}
+                          className="mr-2"
+                        />
                       </div>
-                      <div className="flex gap-3">
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleSwipeDecision("left");
-                          }}
-                          className="h-12 w-12 rounded-full bg-red-500/90 hover:bg-red-500 transition shadow-lg flex items-center justify-center"
-                          aria-label="Pass"
-                          title="Pass"
-                        >
-                          ✖
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleSwipeDecision("right");
-                          }}
-                          className="h-12 w-12 rounded-full bg-emerald-500/90 hover:bg-emerald-500 transition shadow-lg flex items-center justify-center"
-                          aria-label="Open Profile"
-                          title="Open Profile"
-                        >
-                          ✓
-                        </button>
+                      <div className="flex justify-between items-center">
+                        <p className="text-white/85 text-sm">Tap to open profile</p>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleSwipeDecision("left");
+                            }}
+                            className="h-12 w-12 rounded-full bg-red-500/90 hover:bg-red-500 transition shadow-lg flex items-center justify-center text-white"
+                            aria-label="Pass"
+                            title="Pass"
+                          >
+                            ✖
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleSwipeDecision("right");
+                            }}
+                            className="h-12 w-12 rounded-full bg-emerald-500/90 hover:bg-emerald-500 transition shadow-lg flex items-center justify-center text-white"
+                            aria-label="Open Profile"
+                            title="Open Profile"
+                          >
+                            ✓
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -228,286 +495,40 @@ export default function LinkSwipeApp() {
             </div>
             
             <div className="mt-8 text-center">
+              {!showForm && (
                 <button
-                  onClick={() => setShowSubmit(true)}
+                  onClick={() => setShowForm(true)}
                   className="rounded-2xl bg-white/10 px-6 py-3 text-lg font-semibold backdrop-blur hover:bg-white/20 transition shadow-lg"
                 >
-                  Promote your Profile ($10)
+                  Promote Your Profile ($10)
                 </button>
+              )}
             </div>
           </div>
         </section>
+        
+        {showForm && (
+          <section className="mt-16">
+            <ProfileForm onClose={() => setShowForm(false)} />
+          </section>
+        )}
       </main>
 
-      <footer className="mx-auto max-w-5xl px-4 pb-10 text-sm text-white/90 mt-12 flex flex-col items-center justify-center gap-3">
-        <div className="flex items-center gap-4">
-            <button
-                onClick={() => setShowSubmit(true)}
-                className="rounded-2xl bg-white/10 px-4 py-2 text-sm font-semibold backdrop-blur hover:bg-white/20 transition"
-            >
-                Promote your Profile ($10)
-            </button>
-            <a
-                href="#"
-                onClick={(e) => {
-                    e.preventDefault();
-                    setShowLegal(true);
-                }}
-                className="text-white/90 hover:text-white underline decoration-white/40 decoration-2 underline-offset-4"
-            >
-                Legal
-            </a>
+      <footer className="mx-auto max-w-5xl px-4 pb-10 text-sm text-white/90 mt-12 flex flex-col md:flex-row items-center justify-center gap-3 md:gap-8">
+        <p>&copy; {new Date().getFullYear()} Link Swipe. All rights reserved.</p>
+        <div className="flex gap-4">
+          <a href="#" onClick={() => setModalType('privacyPolicy')} className="hover:underline">Privacy and Data Protection</a>
+          <a href="#" onClick={() => setModalType('termsOfUse')} className="hover:underline">Terms of Use</a>
+          <a href="#" onClick={() => setModalType('legalDisclaimer')} className="hover:underline">Legal Disclaimer and Copyright Policy</a>
         </div>
-        <p>© {new Date().getFullYear()} Link Swipe. All rights reserved.</p>
       </footer>
-
-      {showSubmit && (
-        <Modal onClose={() => setShowSubmit(false)} title="Promote Your Profile ($10)">
-          <SubmitProfileCard onToast={pushToast} onOpenLegal={() => setShowLegal(true)} />
-        </Modal>
-      )}
-
-      {showLegal && (
-        <Modal onClose={() => setShowLegal(false)} title="Legal – Terms of Service and Privacy Policy">
-          <LegalDocs />
-        </Modal>
-      )}
-
-      {!!toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-black/80 text-white px-4 py-2 rounded-xl shadow-lg border border-white/10">
-          {toast}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SubmitProfileCard({ onToast, onOpenLegal }: { onToast: (msg: string) => void; onOpenLegal: () => void }) {
-  const [name, setName] = useState("");
-  const [username, setUsername] = useState("");
-  const [link, setLink] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const [agreed, setAgreed] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-
-  const filePreview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
-
-  const validate = () => {
-    if (!name.trim()) return "Your Name is required";
-    if (!username.trim()) return "Your Username is required";
-    if (!/^https?:\/\//i.test(link)) return "Link must start with http:// or https://";
-    if (!file) return "Profile image file is required";
-    if (!agreed) return "You must accept the legal terms";
-    return null;
-  };
-
-  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const err = validate();
-    if (err) {
-      onToast(err);
-      return;
-    }
-    setSubmitting(true);
-
-    // Submitting form information (This is just a frontend placeholder)
-    console.log("Submitting form data:", { name, username, link, file: file?.name });
-    
-    // Open payment link (Gumroad link)
-    window.open("https://gumroad.com/l/GUMROAD_PRODUCT_LINK", "_blank", "noopener,noreferrer");
-
-    // Inform user
-    onToast(
-      "You are being redirected to the payment page. Please complete the payment. After payment, your profile will be submitted for review."
-    );
-
-    setSubmitting(false);
-
-    // Clear form
-    setName("");
-    setUsername("");
-    setLink("");
-    setFile(null);
-    setAgreed(false);
-  };
-
-  return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm mb-1">Your Name</label>
-          <input
-            className="w-full rounded-xl border border-white/20 bg-white/10 px-3 py-2 outline-none placeholder-white/70"
-            placeholder="Jane Doe"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm mb-1">Your Username</label>
-          <input
-            className="w-full rounded-xl border border-white/20 bg-white/10 px-3 py-2 outline-none placeholder-white/70"
-            placeholder="@janedoe"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm mb-1">Single Social Media Link</label>
-        <input
-          className="w-full rounded-xl border border-white/20 bg-white/10 px-3 py-2 outline-none placeholder-white/70"
-          placeholder="https://instagram.com/yourusername"
-          value={link}
-          onChange={(e) => setLink(e.target.value)}
-          required
-          inputMode="url"
+      {modalType && (
+        <Modal
+          title={LegalContent[modalType].title}
+          content={LegalContent[modalType].text}
+          onClose={() => setModalType(null)}
         />
-      </div>
-
-      <div>
-        <label className="block text-sm mb-1">Profile Photo (file)</label>
-        <input
-          type="file"
-          accept="image/*"
-          className="w-full rounded-xl border border-white/20 bg-white/10 px-3 py-2"
-          onChange={(e) => setFile(e.target.files?.[0] || null)}
-          required
-        />
-        {filePreview && (
-          <div className="mt-3">
-            <Image
-              src={filePreview}
-              alt="Preview"
-              width={160}
-              height={160}
-              className="h-40 w-40 object-cover rounded-2xl border border-white/20"
-            />
-          </div>
-        )}
-      </div>
-
-      <label className="flex items-start gap-3 text-sm text-white">
-        <input
-          type="checkbox"
-          checked={agreed}
-          onChange={(e) => setAgreed(e.target.checked)}
-          className="mt-1"
-        />
-        <span>
-          {" "}
-          I have read and agree to the{" "}
-          <button
-            type="button"
-            onClick={onOpenLegal}
-            className="underline decoration-white/40 decoration-2 underline-offset-4"
-          >
-            Terms of Service and Privacy Policy
-          </button>
-          . I understand that my profile will not be published until approved by an administrator and payment is confirmed.
-        </span>
-      </label>
-
-      <div className="flex flex-wrap items-center gap-3 pt-2">
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded-2xl bg-emerald-400 px-6 py-3 font-bold text-black hover:bg-emerald-300 shadow disabled:opacity-60"
-        >
-          {submitting ? "Submitting..." : "Pay $10 to Promote"}
-        </button>
-      </div>
-    </form>
-  );
-}
-
-function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden
-      />
-      <div className="relative w-full max-w-2xl rounded-3xl border border-white/15 bg-white/10 text-white p-6 shadow-2xl">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg md:text-xl font-bold">{title}</h3>
-          <button
-            onClick={onClose}
-            className="rounded-full bg-white/20 hover:bg-white/30 p-2"
-            aria-label="Close"
-          >
-            ✖
-          </button>
-        </div>
-        <div className="max-h-[70vh] overflow-auto pr-2">
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function LegalDocs() {
-  return (
-    <div className="space-y-6 text-white/95 text-sm leading-relaxed">
-      <section>
-        <h4 className="font-bold text-white text-base">Terms of Service</h4>
-        <p>
-          LinkSwipe is a discovery tool for public social media links. By submitting content, you
-          confirm that you own the rights to publish, that the content is accurate, legal, and does not
-          infringe on third-party rights. We reserve the right to reject, remove, or moderate any profile
-          at our discretion. Publication is subject to manual review and successful payment.
-        </p>
-        <ul className="list-disc ml-5 mt-2 space-y-1">
-          <li>Your profile must not contain private or sensitive data.</li>
-          <li>No impersonation, spam, or illegal content.</li>
-          <li>Profiles are for promotional purposes; no guarantee of visibility or results.</li>
-          <li>Payments are processed by a PCI-compliant provider; we do not store card data.</li>
-          <li>Payments are non-refundable if you submit content violating the terms.</li>
-        </ul>
-      </section>
-
-      <section>
-        <h4 className="font-bold text-white text-base">Privacy Policy</h4>
-        <p>
-          We only collect necessary data (name, username, public link, profile picture) to operate the
-          service. Do not include private information. If you sign in with a third-party
-          provider in the future, your unique user ID will not be publicly displayed.
-        </p>
-        <p className="mt-2">
-          Submitted data may be stored on secure cloud infrastructure with strict access controls.
-          You may request deletion of your profile by contacting support.
-        </p>
-      </section>
-
-      <section>
-        <h4 className="font-bold text-white text-base">Security</h4>
-        <ul className="list-disc ml-5 mt-2 space-y-1">
-          <li>Never include sensitive keys (API keys, database passwords) in client-side code.</li>
-          <li>All sensitive operations (payments, approvals) must be handled server-side.</li>
-          <li>Sanitize and validate all inputs on the server. Use Content Security Policy (CSP).</li>
-          <li>Use HTTPS everywhere and enable HTTP-only, Secure cookies for sessions.</li>
-        </ul>
-      </section>
-
-      <section>
-        <h4 className="font-bold text-white text-base">Refunds</h4>
-        <p>
-          Payments are non-refundable once your profile has been reviewed, unless required by law.
-          If your content violates the Terms of Service, your profile may be rejected without a refund.
-        </p>
-      </section>
-
-      <section>
-        <h4 className="font-bold text-white text-base">Contact</h4>
-        <p>
-          For any questions or removal requests: reach out to support@linkswipe.example.
-        </p>
-      </section>
+      )}
     </div>
   );
 }
