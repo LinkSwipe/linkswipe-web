@@ -6,7 +6,6 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getApps, initializeApp } from "firebase/app";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAuU15H3qlQzZVKWlYOhpeZN-1_zL18IKA",
   authDomain: "linkswipe-app.firebaseapp.com",
   projectId: "linkswipe-app",
   storageBucket: "linkswipe-app.firebasestorage.app",
