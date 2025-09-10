@@ -7,7 +7,6 @@ import { getApps, initializeApp } from "firebase/app";
 
 // Firebase Config
 const firebaseConfig = {
-  apiKey: "AIzaSyAuU15H3qlQzZVKWlYOhpeZN-1_zL18IKA",
   authDomain: "linkswipe-app.firebaseapp.com",
   projectId: "linkswipe-app",
   storageBucket: "linkswipe-app.firebasestorage.app",
