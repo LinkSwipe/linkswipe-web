@@ -2,14 +2,14 @@ import { getFirestore, collection, query, where, getDocs, updateDoc, doc } from 
 import { getApps, initializeApp } from 'firebase/app';
 import { NextResponse } from 'next/server';
 
+// Firebase configuration using environment variables for security.
 const firebaseConfig = {
-  // Your Firebase configuration
-  apiKey: "AIzaSyAuU15H3qlQzZVKWlYOhpeZN-1_zL18IKA",
-  authDomain: "linkswipe-app.firebaseapp.com",
-  projectId: "linkswipe-app",
-  storageBucket: "linkswipe-app.firebasestorage.app",
-  messagingSenderId: "392732526585",
-  appId: "1:392732526585:web:7ff0a025b54990ab81df28",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
 // Initialize Firebase app if not already initialized
@@ -17,27 +17,28 @@ const apps = getApps();
 const app = !apps.length ? initializeApp(firebaseConfig) : apps[0];
 const db = getFirestore(app);
 
+/**
+ * Handles the POST request from the Gumroad webhook.
+ * It finds the user's profile based on their email and updates its status to 'approved'
+ * upon successful payment.
+ */
 export async function POST(request) {
   try {
     const data = await request.formData();
-    const product_id = data.get('product_id');
+    const productId = data.get('product_id');
     const email = data.get('email');
-    const seller_id = data.get('seller_id');
-    const test_mode = data.get('test_mode') === 'true'; // Gumroad sends this as a string
+    const sellerId = data.get('seller_id');
+    const testMode = data.get('test_mode') === 'true'; // Gumroad sends this as a string
 
     // IMPORTANT: Verify the webhook came from Gumroad and is for the correct product
-    // You should replace these with your actual Gumroad product ID and secret key if you have one.
-    // In a real-world scenario, you would also verify the secret key for added security.
-    if (product_id !== "xziod") { // Replace with your actual product ID
+    // You should replace this with your actual Gumroad product ID.
+    if (productId !== "xziod") { 
         return NextResponse.json({ message: 'Invalid product ID' }, { status: 400 });
     }
 
     // You would use `email` or another unique identifier to find the profile
-    // Here we'll make a simple assumption that email is a good identifier.
-    // In a real app, you would likely use a unique ID passed from the frontend to the backend.
-
     const profilesRef = collection(db, "profiles");
-    const q = query(profilesRef, where("email", "==", email)); // Assuming you added email to your profile data
+    const q = query(profilesRef, where("email", "==", email));
 
     const querySnapshot = await getDocs(q);
 
@@ -46,7 +47,7 @@ export async function POST(request) {
         return NextResponse.json({ message: 'Profile not found' }, { status: 404 });
     }
 
-    // Update the status of the first matching profile
+    // Update the status of the first matching profile to 'approved'
     const profileDoc = querySnapshot.docs[0];
     await updateDoc(doc(db, "profiles", profileDoc.id), {
         status: "approved"
